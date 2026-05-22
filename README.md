@@ -4,7 +4,7 @@
 
 A small web app for close-reading French texts. Click any word for an instant translation, select a phrase or sentence to translate it, highlight the words you've looked up, and pick up where you left off. Bring your own EPUB/TXT books. No daily translation limit, no account, no backend — everything stays in your browser.
 
-**▶ Try it live: https://peter-awe.github.io/french-reader/**
+**▶ Try it live: https://peter-awe.github.io/mot-a-mot/**
 
 > Open it in **Chrome**. Some ad/privacy blockers (and Safari) block the translation services and you'll see "Failed to fetch" — see [Translation engine](#translation-engine) below.
 
@@ -24,8 +24,8 @@ A small web app for close-reading French texts. Click any word for an instant tr
 **Run it locally** (required if you want DeepL, see below):
 
 ```bash
-git clone https://github.com/Peter-awe/french-reader.git
-cd french-reader
+git clone https://github.com/Peter-awe/mot-a-mot.git
+cd mot-a-mot
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```
@@ -63,7 +63,7 @@ Translations then prefer DeepL and fall back to the free endpoints whenever the 
 ## Project structure
 
 ```
-french-reader/
+mot-a-mot/
 ├── index.html         # single page: library + reader + settings
 ├── style.css
 ├── js/
@@ -87,11 +87,11 @@ french-reader/
 It's a static site, so any static host works. For GitHub Pages with the `gh` CLI:
 
 ```bash
-gh repo create french-reader --public --source=. --push
-gh api -X POST repos/<your-username>/french-reader/pages -f "source[branch]=main" -f "source[path]=/"
+gh repo create mot-a-mot --public --source=. --push
+gh api -X POST repos/<your-username>/mot-a-mot/pages -f "source[branch]=main" -f "source[path]=/"
 ```
 
-Then open `https://<your-username>.github.io/french-reader/`.
+Then open `https://<your-username>.github.io/mot-a-mot/`.
 
 ## License
 
