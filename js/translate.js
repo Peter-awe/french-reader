@@ -80,6 +80,23 @@ const Translator = (() => {
     return data.translations[0].text;
   }
 
+  // DeepL via 本地代理（proxy/deepl_proxy.py）—— 绕过 CORS，key 藏在代理里
+  async function deeplViaProxy(text, sl, tl, proxyUrl) {
+    const body = new URLSearchParams();
+    body.set('text', text);
+    if (sl && sl !== 'auto') body.set('source_lang', sl.toUpperCase());
+    body.set('target_lang', tl.toUpperCase());
+    const res = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    if (!res.ok) throw new Error('deepl-proxy ' + res.status);
+    const data = await res.json();
+    if (!data.translations) throw new Error('deepl-proxy: ' + (data.error || 'bad response'));
+    return data.translations[0].text;
+  }
+
   const FREE_CHAIN = [googleDictChrome, googleGtx, lingva, myMemory];
 
   // 译文缓存：同一段文字不重复请求
@@ -94,8 +111,13 @@ const Translator = (() => {
     if (cache.has(ck)) return cache.get(ck);
 
     const chain = [];
+    // 1. 优先本地 DeepL 代理（若已填地址且代理在跑）
+    const proxyUrl = (Storage.getSetting('deeplProxy') || '').trim();
+    if (proxyUrl) chain.push((t, s, l) => deeplViaProxy(t, s, l, proxyUrl));
+    // 2. 直连 DeepL（多半被 CORS 拦，留作高级用户的兜底）
     const deeplKey = (Storage.getSetting('deeplKey') || '').trim();
     if (deeplKey) chain.push((t, s, l) => deepl(t, s, l, deeplKey));
+    // 3. 免费端点 fallback
     chain.push(...FREE_CHAIN);
 
     let lastErr;

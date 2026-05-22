@@ -3,3 +3,6 @@
 *.epub
 *.txt
 !README*.txt
+
+# DeepL 密钥 —— 绝不提交（本地代理从这里读 key）
+deepl_key.txt

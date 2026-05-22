@@ -290,6 +290,7 @@
     const s = Storage.getSettings();
     $('src-lang').value = s.srcLang;
     $('tgt-lang').value = s.tgtLang;
+    $('deepl-proxy').value = s.deeplProxy;
     $('deepl-key').value = s.deeplKey;
     $('auto-highlight').checked = s.autoHighlight;
     $('settings-modal').classList.remove('hidden');
@@ -298,6 +299,7 @@
     Storage.saveSettings({
       srcLang: $('src-lang').value,
       tgtLang: $('tgt-lang').value,
+      deeplProxy: $('deepl-proxy').value.trim(),
       deeplKey: $('deepl-key').value.trim(),
       autoHighlight: $('auto-highlight').checked,
     });

@@ -26,16 +26,25 @@
 
 ### 关于 DeepL（可选，最高质量）
 
-设置里可以填 DeepL Free API Key。**但注意**：DeepL 官方 API 不返回 CORS 头，浏览器**无法直连**，从 GitHub Pages 调用会失败。两个解决办法：
+DeepL 官方 API 不返回 CORS 头，浏览器**无法直连**。本项目自带一个本地代理解决这个问题。
 
-**A. 本地小代理（推荐想用 DeepL 时）**
-```bash
-# 用 deno 起一个 30 行的 CORS 代理（示例）
-# 或用任何能加 Access-Control-Allow-Origin 的反代
-```
-然后把 `js/translate.js` 里 `deepl()` 的 endpoint 改成你的本地代理地址。
+**用法**：
 
-**B. 不用 DeepL**：免费端点对「读小说点词点句」已经完全够用，建议先用默认的。
+1. 把你的 DeepL key 写进项目根目录的 `deepl_key.txt`（一行，`xxxx:fx` 这种）。
+   该文件已被 `.gitignore`，**不会进仓库**。
+2. 启动代理（纯 Python 标准库，无需 pip 安装）：
+   ```bash
+   python3 proxy/deepl_proxy.py
+   ```
+3. 在 French Reader 的「设置」里把 **DeepL 代理地址** 填成 `http://localhost:1188`，保存。
+
+之后翻译会优先走 DeepL；代理没开时自动 fallback 到免费端点，不影响使用。
+
+**注意**：代理是 HTTP localhost，只在你**本地运行 app**（`http://localhost:8000`）时生效。
+部署到 GitHub Pages（HTTPS）的站点调用 `http://localhost` 属于混合内容，浏览器会拦——
+那种场景用免费端点，或改用 Cloudflare Worker 等 HTTPS 代理。
+
+**其实免费端点对「读小说点词点句」已经完全够用**，DeepL 的优势主要在整句语气，按需开即可。
 
 ## 本地运行
 

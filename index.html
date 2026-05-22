@@ -69,10 +69,14 @@
         </select>
       </div>
 
-      <label class="field-label">DeepL Free API Key（可选）</label>
-      <input type="password" id="deepl-key" placeholder="xxxxxxxx-xxxx-...:fx">
-      <p class="hint">留空则用免费端点（Google 镜像 / Lingva / MyMemory 自动 fallback）。<br>
-        ⚠️ DeepL 浏览器直连受 CORS 限制，可能需要本地代理（见 README）。Key 只存在你本地浏览器，不会上传。</p>
+      <label class="field-label">DeepL 代理地址（可选，最高质量）</label>
+      <input type="text" id="deepl-proxy" placeholder="http://localhost:1188">
+      <p class="hint">跑了本地代理（<code>python3 proxy/deepl_proxy.py</code>）后填这里，翻译走 DeepL。<br>
+        留空则用免费端点（Google 镜像 / Lingva / MyMemory 自动 fallback），日常够用。</p>
+
+      <label class="field-label">DeepL API Key（高级，直连，多半被 CORS 拦）</label>
+      <input type="password" id="deepl-key" placeholder="xxxxxxxx-...:fx">
+      <p class="hint">仅当你有支持 CORS 的 DeepL 网关时才用；一般用上面的代理。Key 只存你本地浏览器。</p>
 
       <label class="field-label checkbox-label">
         <input type="checkbox" id="auto-highlight" checked> 点过的词自动高亮

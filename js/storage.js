@@ -75,7 +75,7 @@ const Storage = (() => {
 
   /* ---------- 设置 ---------- */
   const SETTINGS_KEY = 'fr_settings';
-  const DEFAULT_SETTINGS = { srcLang: 'fr', tgtLang: 'en', deeplKey: '', autoHighlight: true };
+  const DEFAULT_SETTINGS = { srcLang: 'fr', tgtLang: 'en', deeplKey: '', deeplProxy: '', autoHighlight: true };
   function getSettings() { return Object.assign({}, DEFAULT_SETTINGS, readJSON(SETTINGS_KEY, {})); }
   function getSetting(k) { return getSettings()[k]; }
   function setSetting(k, v) { const s = getSettings(); s[k] = v; writeJSON(SETTINGS_KEY, s); }
