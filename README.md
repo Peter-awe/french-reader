@@ -1,95 +1,96 @@
-# French Reader · 法语阅读器
+# French Reader
 
-一个纯静态的网页版法语精读工具，复刻 Readlang 的核心体验，**无每日翻译限额**。
-点词查义、选句翻译、生词高亮、阅读进度自动保存、导入 epub/txt。所有数据都存在你自己的浏览器里。
+A small web app for close-reading French texts. Click any word for an instant translation, select a phrase or sentence to translate it, highlight the words you've looked up, and pick up where you left off. Bring your own EPUB/TXT books. No daily translation limit, no account, no backend — everything stays in your browser.
 
-## 功能
+**▶ Try it live: https://peter-awe.github.io/french-reader/**
 
-- **点词翻译**：点任意单词，弹出译文（法语撇号词 `l'amie`、连字符词 `peut-être` 都能正确识别）
-- **选句/选短语翻译**：用鼠标划选一段文字，自动翻译
-- **整句翻译**：点词后弹窗里点「翻译整句」
-- **生词高亮**：点过的词自动标黄；可标记为「已掌握」（标绿）或移除
-- **阅读进度**：自动记住每本书读到哪，刷新/重开不丢
-- **导入**：拖入或选择 `.epub` / `.txt`，或直接粘贴文本
-- **离线优先**：书籍存 IndexedDB，生词/进度/设置存 localStorage，不上传任何服务器
+> Open it in **Chrome**. Some ad/privacy blockers (and Safari) block the translation services and you'll see "Failed to fetch" — see [Translation engine](#translation-engine) below.
 
-## 翻译引擎
+## Features
 
-默认用支持浏览器跨域（CORS）的免费端点，自动按顺序 fallback：
+- **Click to translate** — click any word for a popup translation. French apostrophe words (`l'amie`, `j'ai`) and hyphenated words (`peut-être`) are recognized correctly.
+- **Phrase & sentence translation** — select any span of text to translate it, or hit "Translate sentence" in the word popup.
+- **Vocabulary highlighting** — words you've looked up get highlighted automatically. Mark one as "known" or clear it.
+- **Reading progress** — your spot in each book is saved and restored across reloads.
+- **Import** — drag in or pick an `.epub` / `.txt` file, or just paste text.
+- **Local-first** — books live in IndexedDB; vocabulary, progress, and settings in localStorage. Nothing is uploaded.
 
-1. Google `dict-chrome-ex` 端点（质量 = Google Translate 本体）
-2. Google `gtx` 端点
-3. Lingva（开源 Google 代理，多实例）
-4. MyMemory（兜底，匿名 5000 词/天）
+## Quick start
 
-哪个能用就用哪个，单个端点挂掉不影响使用。
+**Just want to read?** Open the live demo above in Chrome, import a book, and go. Nothing to install.
 
-### 关于 DeepL（可选，最高质量）
+**Run it locally** (required if you want DeepL, see below):
 
-DeepL 官方 API 不返回 CORS 头，浏览器**无法直连**。本项目自带一个本地代理解决这个问题。
+```bash
+git clone https://github.com/Peter-awe/french-reader.git
+cd french-reader
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
 
-**用法**：
+Don't open `index.html` directly as a `file://` URL — fetch and script loading break under `file://`. Use the local server.
 
-1. 把你的 DeepL key 写进项目根目录的 `deepl_key.txt`（一行，`xxxx:fx` 这种）。
-   该文件已被 `.gitignore`，**不会进仓库**。
-2. 启动代理（纯 Python 标准库，无需 pip 安装）：
+## Translation engine
+
+By default the app uses free, CORS-enabled endpoints and tries each in order until one answers:
+
+1. Google `dict-chrome-ex` (same quality as Google Translate)
+2. Google `gtx`
+3. Lingva (open-source Google proxy, several instances)
+4. MyMemory (fallback, ~5000 words/day anonymous)
+
+If one is down, it falls through to the next.
+
+> **Seeing "Failed to fetch"?** An ad/privacy blocker is probably blocking the translation domains, or you're on Safari with strict privacy settings. Use Chrome, or allow the site in your blocker, or run the DeepL proxy below.
+
+### DeepL (optional, best quality)
+
+DeepL's API doesn't send CORS headers, so a browser can't call it directly. This repo ships a tiny local proxy that fixes that.
+
+1. Put your DeepL key in `deepl_key.txt` in the project root (one line, e.g. `xxxx:fx`). This file is `.gitignore`d and is never committed.
+2. Start the proxy (pure Python standard library, nothing to `pip install`):
    ```bash
    python3 proxy/deepl_proxy.py
    ```
-3. 在 French Reader 的「设置」里把 **DeepL 代理地址** 填成 `http://localhost:1188`，保存。
+3. In the app's **Settings**, set **DeepL proxy address** to `http://localhost:1188` and save.
 
-之后翻译会优先走 DeepL；代理没开时自动 fallback 到免费端点，不影响使用。
+Translations then prefer DeepL and fall back to the free endpoints whenever the proxy isn't running.
 
-**注意**：代理是 HTTP localhost，只在你**本地运行 app**（`http://localhost:8000`）时生效。
-部署到 GitHub Pages（HTTPS）的站点调用 `http://localhost` 属于混合内容，浏览器会拦——
-那种场景用免费端点，或改用 Cloudflare Worker 等 HTTPS 代理。
+> The proxy is plain HTTP on localhost, so it only works when you run the app locally (`http://localhost:8000`). The deployed HTTPS site can't call `http://localhost` (mixed content), so the live demo always uses the free endpoints. For reading and looking up words, the free quality is already good.
 
-**其实免费端点对「读小说点词点句」已经完全够用**，DeepL 的优势主要在整句语气，按需开即可。
-
-## 本地运行
-
-因为用到 `fetch` 和 ES 模块化脚本，**不要直接双击 `index.html`**（`file://` 协议下跨域和路径会出问题）。起一个本地服务器：
-
-```bash
-cd french-reader
-python3 -m http.server 8000
-# 浏览器打开 http://localhost:8000
-```
-
-## 部署到 GitHub Pages
-
-```bash
-cd french-reader
-git init
-git add .
-git commit -m "Initial commit: French Reader"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/french-reader.git
-git push -u origin main
-```
-
-然后在仓库 Settings → Pages → Source 选 `main` 分支 `/ (root)`，几分钟后访问
-`https://<你的用户名>.github.io/french-reader/`。
-
-> 仓库里的 `.nojekyll` 文件用于关闭 GitHub Pages 默认的 Jekyll 处理，避免 `js/` 目录被忽略。
-
-## 文件结构
+## Project structure
 
 ```
 french-reader/
-├── index.html        # 单页：书库 + 阅读 + 设置
-├── style.css         # 样式
+├── index.html         # single page: library + reader + settings
+├── style.css
 ├── js/
-│   ├── storage.js    # IndexedDB（书籍）+ localStorage（生词/进度/设置）
-│   ├── translate.js  # 多端点 fallback 翻译引擎
-│   ├── library.js    # txt/epub 导入解析
-│   └── reader.js     # 渲染 + 交互 + UI 接线
-├── README.md
-└── .nojekyll
+│   ├── storage.js     # IndexedDB (books) + localStorage (vocab/progress/settings)
+│   ├── translate.js   # multi-endpoint fallback translation engine
+│   ├── library.js     # txt/epub import & parsing
+│   └── reader.js      # rendering + interaction + UI wiring
+├── proxy/
+│   └── deepl_proxy.py # optional local DeepL proxy
+└── .nojekyll          # keeps GitHub Pages from running Jekyll (so the js/ folder is served)
 ```
 
-## 隐私
+## Privacy
 
-- 不需要登录、不需要后端、不收集任何数据
-- 书籍正文 + 生词 + 进度 + 设置（含 DeepL key）全部只存在你这台机器的浏览器里
-- 翻译请求直接从你的浏览器发往翻译端点，本应用不经手
+- No login, no backend, no analytics.
+- Your books, vocabulary, progress, and settings (including any DeepL key) stay in your browser and on your machine.
+- Translation requests go straight from your browser to the translation endpoint. The app never sees them.
+
+## Deploy your own
+
+It's a static site, so any static host works. For GitHub Pages with the `gh` CLI:
+
+```bash
+gh repo create french-reader --public --source=. --push
+gh api -X POST repos/<your-username>/french-reader/pages -f "source[branch]=main" -f "source[path]=/"
+```
+
+Then open `https://<your-username>.github.io/french-reader/`.
+
+## License
+
+MIT — do whatever you like with it.
