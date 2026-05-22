@@ -131,7 +131,7 @@
     const transEl = $('popup-trans');
     const cached = Storage.getWord(word);
     transEl.classList.add('loading');
-    transEl.textContent = cached && cached.trans ? cached.trans : '翻译中…';
+    transEl.textContent = cached && cached.trans ? cached.trans : 'Translating…';
     positionPopup(wordEl.getBoundingClientRect());
 
     try {
@@ -150,7 +150,7 @@
       positionPopup(wordEl.getBoundingClientRect());
     } catch (e) {
       transEl.classList.remove('loading');
-      transEl.textContent = '⚠️ 翻译失败：' + e.message;
+      transEl.textContent = '⚠️ Translation failed: ' + e.message;
     }
   }
 
@@ -163,7 +163,7 @@
     $('popup-sentence-trans').classList.add('hidden');
     const transEl = $('popup-trans');
     transEl.classList.add('loading');
-    transEl.textContent = '翻译中…';
+    transEl.textContent = 'Translating…';
     positionPopup(rect);
     try {
       const trans = await Translator.translate(text);
@@ -172,7 +172,7 @@
       positionPopup(rect);
     } catch (e) {
       transEl.classList.remove('loading');
-      transEl.textContent = '⚠️ 翻译失败：' + e.message;
+      transEl.textContent = '⚠️ Translation failed: ' + e.message;
     }
   }
 
@@ -225,7 +225,7 @@
     const books = await Storage.getAllBooks();
     list.innerHTML = '';
     if (!books.length) {
-      list.innerHTML = '<li class="empty-hint">书库还是空的，导入一本法语小说开始吧。</li>';
+      list.innerHTML = '<li class="empty-hint">Your library is empty. Import a French book to get started.</li>';
       return;
     }
     books.forEach(book => {
@@ -236,22 +236,22 @@
       li.innerHTML = `
         <div class="book-meta">
           <span class="book-title"></span>
-          <span class="book-sub">${book.type} · 约 ${words.toLocaleString()} 词 · 已读 ${prog}%</span>
+          <span class="book-sub">${book.type} · ~${words.toLocaleString()} words · ${prog}% read</span>
         </div>
         <div class="book-actions">
-          <button class="book-rename" title="重命名">✎</button>
-          <button class="book-del" title="删除">🗑</button>
+          <button class="book-rename" title="Rename">✎</button>
+          <button class="book-del" title="Delete">🗑</button>
         </div>`;
       li.querySelector('.book-title').textContent = book.title;
       li.querySelector('.book-rename').addEventListener('click', async (e) => {
         e.stopPropagation();
-        const newTitle = prompt('重命名为：', book.title);
+        const newTitle = prompt('Rename to:', book.title);
         if (newTitle && newTitle.trim()) {
           const full = await Storage.getBook(book.id);
           full.title = newTitle.trim();
           await Storage.saveBook(full);
           renderLibrary();
-          toast('已重命名');
+          toast('Renamed');
         }
       });
       li.querySelector('.book-meta').addEventListener('click', async () => {
@@ -260,10 +260,10 @@
       });
       li.querySelector('.book-del').addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (confirm(`删除《${book.title}》？生词记录会保留。`)) {
+        if (confirm(`Delete "${book.title}"? Your vocabulary highlights are kept.`)) {
           await Storage.deleteBook(book.id);
           renderLibrary();
-          toast('已删除');
+          toast('Deleted');
         }
       });
       list.appendChild(li);
@@ -274,13 +274,13 @@
   async function handleFiles(files) {
     const status = $('import-status');
     for (const file of files) {
-      status.textContent = `正在解析 ${file.name} …`;
+      status.textContent = `Parsing ${file.name}…`;
       try {
         const book = await Library.importFile(file);
-        status.textContent = `✅ 已导入《${book.title}》`;
+        status.textContent = `✅ Imported "${book.title}"`;
         await renderLibrary();
       } catch (e) {
-        status.textContent = `⚠️ ${file.name} 导入失败：${e.message}`;
+        status.textContent = `⚠️ Failed to import ${file.name}: ${e.message}`;
       }
     }
   }
@@ -305,7 +305,7 @@
     });
     $('settings-modal').classList.add('hidden');
     if (currentBook) applyHighlights();
-    toast('设置已保存');
+    toast('Settings saved');
   }
 
   /* ===== 接线 ===== */
@@ -330,11 +330,11 @@
     // 导入：粘贴
     $('btn-import-paste').addEventListener('click', async () => {
       const text = $('paste-text').value.trim();
-      if (!text) { toast('请先粘贴文本'); return; }
+      if (!text) { toast('Paste some text first'); return; }
       const book = await Library.importText($('paste-title').value, text);
       $('paste-text').value = ''; $('paste-title').value = '';
       await renderLibrary();
-      toast(`已导入《${book.title}》`);
+      toast(`Imported "${book.title}"`);
     });
 
     // 阅读区交互：mouseup 统一处理（区分单词点击 vs 短语选择）
@@ -355,7 +355,7 @@
       const sentence = getSentenceAround(activeWordEl);
       const box = $('popup-sentence-trans');
       box.classList.remove('hidden');
-      box.textContent = '整句翻译中…';
+      box.textContent = 'Translating sentence…';
       try {
         box.textContent = await Translator.translate(sentence);
       } catch (e) { box.textContent = '⚠️ ' + e.message; }
@@ -365,7 +365,7 @@
       if (!activeWordEl) return;
       Storage.setWord(activeWordEl.textContent, { status: 'known' });
       applyHighlights();
-      toast('已标记为掌握');
+      toast('Marked as known');
     });
     $('popup-forget').addEventListener('click', () => {
       if (!activeWordEl) return;
@@ -384,8 +384,8 @@
     $('btn-save-settings').addEventListener('click', saveSettings);
     $('btn-close-settings').addEventListener('click', () => $('settings-modal').classList.add('hidden'));
     $('btn-clear-words').addEventListener('click', () => {
-      if (confirm('清空所有生词高亮？此操作不可撤销。')) {
-        Storage.clearWords(); applyHighlights(); toast('已清空生词');
+      if (confirm('Clear all vocabulary highlights? This cannot be undone.')) {
+        Storage.clearWords(); applyHighlights(); toast('Highlights cleared');
       }
     });
 

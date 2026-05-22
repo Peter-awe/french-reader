@@ -23,18 +23,18 @@ const Library = (() => {
   }
 
   async function importEpub(file) {
-    if (typeof JSZip === 'undefined') throw new Error('JSZip 未加载（检查网络/CDN）');
+    if (typeof JSZip === 'undefined') throw new Error('JSZip not loaded (check your network/CDN)');
     const zip = await JSZip.loadAsync(file);
     const parser = new DOMParser();
 
     // 1. META-INF/container.xml → 找到 .opf 路径
     const containerFile = zip.file('META-INF/container.xml');
-    if (!containerFile) throw new Error('不是有效的 epub（缺 container.xml）');
+    if (!containerFile) throw new Error('Not a valid epub (missing container.xml)');
     const containerXml = await containerFile.async('string');
     const cdoc = parser.parseFromString(containerXml, 'application/xml');
     const rootfile = cdoc.querySelector('rootfile');
     const opfPath = rootfile && rootfile.getAttribute('full-path');
-    if (!opfPath) throw new Error('epub 缺少 OPF 路径');
+    if (!opfPath) throw new Error('epub is missing the OPF path');
     const opfDir = opfPath.includes('/') ? opfPath.replace(/\/[^/]*$/, '/') : '';
 
     // 2. 解析 .opf：manifest（id→href）+ spine（阅读顺序）+ 标题
@@ -73,7 +73,7 @@ const Library = (() => {
       const clean = normalize(raw);
       if (clean) chapters.push(clean);
     }
-    if (!chapters.length) throw new Error('epub 解析后没有正文（可能是加密/DRM）');
+    if (!chapters.length) throw new Error('No text found after parsing the epub (it may be encrypted/DRM)');
 
     const book = {
       id: genId(),
@@ -95,7 +95,7 @@ const Library = (() => {
   async function importText(title, text) {
     const book = {
       id: genId(),
-      title: (title || '').trim() || '未命名 · ' + new Date().toLocaleDateString(),
+      title: (title || '').trim() || 'Untitled · ' + new Date().toLocaleDateString(),
       type: 'paste',
       text: normalize(text),
       addedAt: Date.now(),
