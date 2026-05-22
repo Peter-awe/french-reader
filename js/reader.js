@@ -1,8 +1,8 @@
-/* reader.js — 渲染 + 交互 + 应用接线 */
+/* reader.js — rendering + interaction + app wiring */
 (() => {
   'use strict';
 
-  // 法语分词：字母开头，词内允许撇号(l'amie, j'ai)和连字符(peut-être)
+  // French tokenizer: starts with a letter; allows in-word apostrophes (l'amie, j'ai) and hyphens (peut-être)
   const WORD_RE = /[\p{L}][\p{L}'’\-]*/gu;
   const SENT_ENDERS = /[.!?…]/;
 
@@ -10,14 +10,14 @@
   let activeWordEl = null;
   let scrollSaveTimer = null;
 
-  /* ===== DOM 引用 ===== */
+  /* ===== DOM references ===== */
   const $ = (id) => document.getElementById(id);
   const libraryView = $('library-view');
   const readerView = $('reader-view');
   const content = $('reader-content');
   const popup = $('popup');
 
-  /* ===== 工具 ===== */
+  /* ===== helpers ===== */
   function toast(msg, ms = 2000) {
     const t = $('toast');
     t.textContent = msg;
@@ -30,7 +30,7 @@
     readerView.classList.toggle('hidden', which !== 'reader');
   }
 
-  /* ===== 渲染 ===== */
+  /* ===== rendering ===== */
   function renderBook(book) {
     currentBook = book;
     $('reader-title').textContent = book.title;
@@ -46,8 +46,8 @@
     content.appendChild(frag);
     applyHighlights();
     showView('reader');
-    // 恢复阅读进度（restoreProgress 内部用 setTimeout 轮询 + ResizeObserver，
-    // 不依赖 requestAnimationFrame —— 后台标签页/部分环境下 rAF 会被节流甚至不触发）
+    // Restore reading progress. restoreProgress uses setTimeout polling + ResizeObserver,
+    // not requestAnimationFrame (rAF is throttled or never fires in background tabs / some environments).
     restoreProgress(book.id);
   }
 
@@ -75,7 +75,7 @@
     });
   }
 
-  /* ===== 句子提取 ===== */
+  /* ===== sentence extraction ===== */
   function getSentenceAround(wordEl) {
     const pEl = wordEl.closest('.para');
     if (!pEl) return wordEl.textContent;
@@ -96,7 +96,7 @@
     return full.slice(start, end).trim();
   }
 
-  /* ===== 弹窗 ===== */
+  /* ===== popup ===== */
   function positionPopup(rect) {
     popup.classList.remove('hidden');
     const pw = popup.offsetWidth, ph = popup.offsetHeight;
@@ -138,14 +138,14 @@
       const trans = await Translator.translate(word);
       transEl.classList.remove('loading');
       transEl.textContent = trans;
-      // 记为生词 + 缓存译文 + 高亮
+      // mark as vocabulary + cache the translation + highlight
       if (Storage.getSetting('autoHighlight')) {
         const existing = Storage.getWord(word);
         Storage.setWord(word, { status: (existing && existing.status === 'known') ? 'known' : 'learning', trans });
         applyHighlights();
         wordEl.classList.add('active');
       } else {
-        Storage.setWord(word, { trans }); // 仅缓存译文，不改状态
+        Storage.setWord(word, { trans }); // cache the translation only, don't change status
       }
       positionPopup(wordEl.getBoundingClientRect());
     } catch (e) {
@@ -176,7 +176,7 @@
     }
   }
 
-  /* ===== 阅读进度 ===== */
+  /* ===== reading progress ===== */
   function currentScrollRatio() {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
@@ -191,9 +191,10 @@
     Storage.setBookProgress(currentBook.id, currentScrollRatio());
     updateProgressUI();
   }
-  // 注意：restore 绝不能调用 saveProgress，否则布局未就绪时会把已存进度覆盖成 0。
-  // 超大文档（11 万 span）布局可能要几秒，scrollHeight 在此之前等于视口高度，
-  // 因此用 ResizeObserver 精确捕捉内容高度增长的时刻，再加长轮询兜底。
+  // NOTE: restore must never call saveProgress — before layout is ready it would overwrite the
+  // saved position with 0. On huge documents (110k+ spans) layout can take seconds, during which
+  // scrollHeight still equals the viewport height, so use a ResizeObserver to catch the moment the
+  // content grows to its full height, plus a long polling fallback.
   function restoreProgress(bookId) {
     const ratio = Storage.getBookProgress(bookId);
     if (ratio <= 0) { updateProgressUI(); return; }
@@ -202,7 +203,7 @@
       if (done) return true;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max > 100) {
-        window.scrollTo(0, ratio * max);  // 触发的 scroll 事件 300ms 后存回同位置，不覆盖
+        window.scrollTo(0, ratio * max);  // the scroll event it fires re-saves the same position 300ms later, no clobber
         updateProgressUI();
         done = true;
         if (ro) ro.disconnect();
@@ -219,7 +220,7 @@
     poll();
   }
 
-  /* ===== 书库 ===== */
+  /* ===== library ===== */
   async function renderLibrary() {
     const list = $('book-list');
     const books = await Storage.getAllBooks();
@@ -270,7 +271,7 @@
     });
   }
 
-  /* ===== 导入处理 ===== */
+  /* ===== import handling ===== */
   async function handleFiles(files) {
     const status = $('import-status');
     for (const file of files) {
@@ -285,7 +286,7 @@
     }
   }
 
-  /* ===== 设置 ===== */
+  /* ===== settings ===== */
   function openSettings() {
     const s = Storage.getSettings();
     $('src-lang').value = s.srcLang;
@@ -308,18 +309,18 @@
     toast('Settings saved');
   }
 
-  /* ===== 接线 ===== */
+  /* ===== wiring ===== */
   function wire() {
-    // 顶栏
+    // top bar
     $('btn-library').addEventListener('click', () => { renderLibrary(); showView('library'); });
     $('btn-settings').addEventListener('click', openSettings);
     $('btn-back').addEventListener('click', () => { renderLibrary(); showView('library'); });
 
-    // 导入：选择文件
+    // import: choose file
     $('btn-choose-file').addEventListener('click', () => $('file-input').click());
     $('file-input').addEventListener('change', (e) => handleFiles(e.target.files));
 
-    // 导入：拖拽
+    // import: drag & drop
     const dz = $('drop-zone');
     ['dragover', 'dragenter'].forEach(ev =>
       dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('dragover'); }));
@@ -327,7 +328,7 @@
       dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('dragover'); }));
     dz.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
 
-    // 导入：粘贴
+    // import: paste
     $('btn-import-paste').addEventListener('click', async () => {
       const text = $('paste-text').value.trim();
       if (!text) { toast('Paste some text first'); return; }
@@ -337,7 +338,7 @@
       toast(`Imported "${book.title}"`);
     });
 
-    // 阅读区交互：mouseup 统一处理（区分单词点击 vs 短语选择）
+    // reader interaction: a single mouseup handler (distinguishes word click vs phrase selection)
     content.addEventListener('mouseup', (e) => {
       const selText = (window.getSelection().toString() || '').trim();
       if (selText && /\s/.test(selText)) {
@@ -348,7 +349,7 @@
       if (wordEl) showWordPopup(wordEl);
     });
 
-    // 弹窗按钮
+    // popup buttons
     $('popup-close').addEventListener('click', hidePopup);
     $('popup-sentence').addEventListener('click', async () => {
       if (!activeWordEl) return;
@@ -374,13 +375,13 @@
       hidePopup();
     });
 
-    // 点空白处关闭弹窗
+    // click outside to close the popup
     document.addEventListener('mousedown', (e) => {
       if (!popup.classList.contains('hidden') &&
           !popup.contains(e.target) && !e.target.closest('.word')) hidePopup();
     });
 
-    // 设置弹窗
+    // settings modal
     $('btn-save-settings').addEventListener('click', saveSettings);
     $('btn-close-settings').addEventListener('click', () => $('settings-modal').classList.add('hidden'));
     $('btn-clear-words').addEventListener('click', () => {
@@ -389,7 +390,7 @@
       }
     });
 
-    // 滚动保存进度（节流）
+    // save progress on scroll (throttled)
     window.addEventListener('scroll', () => {
       if (readerView.classList.contains('hidden')) return;
       clearTimeout(scrollSaveTimer);
@@ -404,7 +405,7 @@
     return (r.width || r.height) ? r : null;
   }
 
-  /* ===== 启动 ===== */
+  /* ===== startup ===== */
   document.addEventListener('DOMContentLoaded', () => {
     wire();
     renderLibrary();

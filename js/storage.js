@@ -1,6 +1,6 @@
-/* storage.js — 持久层
-   - 书籍正文（大）→ IndexedDB（localStorage 5MB 上限装不下小说）
-   - 生词 / 阅读进度 / 设置（小）→ localStorage
+/* storage.js — persistence layer
+   - book text (large) → IndexedDB (localStorage's ~5MB cap can't hold novels)
+   - vocabulary / reading progress / settings (small) → localStorage
 */
 const Storage = (() => {
   const DB_NAME = 'frenchReaderDB';
@@ -64,7 +64,7 @@ const Storage = (() => {
     });
   }
 
-  /* ---------- localStorage 帮手 ---------- */
+  /* ---------- localStorage helpers ---------- */
   function readJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) || fallback; }
     catch { return fallback; }
@@ -73,7 +73,7 @@ const Storage = (() => {
     localStorage.setItem(key, JSON.stringify(val));
   }
 
-  /* ---------- 设置 ---------- */
+  /* ---------- settings ---------- */
   const SETTINGS_KEY = 'fr_settings';
   const DEFAULT_SETTINGS = { srcLang: 'fr', tgtLang: 'en', deeplKey: '', deeplProxy: '', autoHighlight: true };
   function getSettings() { return Object.assign({}, DEFAULT_SETTINGS, readJSON(SETTINGS_KEY, {})); }
@@ -81,8 +81,8 @@ const Storage = (() => {
   function setSetting(k, v) { const s = getSettings(); s[k] = v; writeJSON(SETTINGS_KEY, s); }
   function saveSettings(obj) { writeJSON(SETTINGS_KEY, Object.assign(getSettings(), obj)); }
 
-  /* ---------- 生词（高亮状态） ---------- */
-  // 结构: { "mot": { status: 'learning'|'known', trans: '...', ts } }
+  /* ---------- vocabulary (highlight state) ---------- */
+  // shape: { "mot": { status: 'learning'|'known', trans: '...', ts } }
   const WORDS_KEY = 'fr_words';
   function getWords() { return readJSON(WORDS_KEY, {}); }
   function getWord(w) { return getWords()[w.toLowerCase()] || null; }
@@ -99,7 +99,7 @@ const Storage = (() => {
   }
   function clearWords() { writeJSON(WORDS_KEY, {}); }
 
-  /* ---------- 阅读进度（0~1 比例） ---------- */
+  /* ---------- reading progress (0–1 ratio) ---------- */
   const PROGRESS_KEY = 'fr_progress';
   function getBookProgress(bookId) { return readJSON(PROGRESS_KEY, {})[bookId] || 0; }
   function setBookProgress(bookId, ratio) {

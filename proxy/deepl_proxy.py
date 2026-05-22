@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """
-DeepL 本地代理 —— 给浏览器补 CORS 头，把翻译请求转发到 DeepL。
+Local DeepL proxy — adds the CORS headers a browser needs and forwards translation requests to DeepL.
 
-为什么需要它：DeepL API 不返回 Access-Control-Allow-Origin，浏览器无法直连。
-这个代理在本地转发，并补上 CORS 头，让 French Reader 能用上 DeepL 的高质量翻译。
+Why it's needed: the DeepL API doesn't return Access-Control-Allow-Origin, so a browser can't call it
+directly. This proxy forwards the request locally and adds the CORS headers, letting Mot à Mot use
+DeepL's higher-quality translations.
 
-用法：
+Usage:
     python3 proxy/deepl_proxy.py
-然后在 French Reader 的「设置」里把「DeepL 代理地址」填成：
+Then, in Mot à Mot's Settings, set "DeepL proxy address" to:
     http://localhost:1188
 
-key 来源（按优先级）：
-    1. 环境变量 DEEPL_KEY
-    2. 项目根目录的 deepl_key.txt（已 gitignore，不会进仓库）
+Key sources (in priority order):
+    1. the DEEPL_KEY environment variable
+    2. deepl_key.txt in the project root (gitignored, never committed)
 
-纯标准库，无需 pip 安装任何东西。Ctrl+C 停止。
+Pure standard library — nothing to pip install. Ctrl+C to stop.
 """
 import http.server
 import urllib.request
@@ -33,19 +34,19 @@ def load_key():
         return k.strip()
     here = os.path.dirname(os.path.abspath(__file__))
     candidates = [
-        os.path.join(here, "..", "deepl_key.txt"),  # 项目根
-        os.path.join(here, "deepl_key.txt"),         # proxy 目录
-        "deepl_key.txt",                              # 当前工作目录
+        os.path.join(here, "..", "deepl_key.txt"),  # project root
+        os.path.join(here, "deepl_key.txt"),         # proxy folder
+        "deepl_key.txt",                              # current working directory
     ]
     for p in candidates:
         if os.path.exists(p):
             with open(p, "r", encoding="utf-8") as f:
                 return f.read().strip()
-    sys.exit("✗ 找不到 DeepL key：设置 DEEPL_KEY 环境变量，或在项目根放 deepl_key.txt")
+    sys.exit("✗ DeepL key not found: set the DEEPL_KEY env var, or put deepl_key.txt in the project root")
 
 
 KEY = load_key()
-# :fx 结尾是 Free 版，否则是 Pro 版
+# a key ending in :fx is the Free tier, otherwise Pro
 ENDPOINT = ("https://api-free.deepl.com/v2/translate"
             if KEY.endswith(":fx")
             else "https://api.deepl.com/v2/translate")
@@ -63,7 +64,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        # 健康检查
+        # health check
         self.send_response(200)
         self._cors()
         self.send_header("Content-Type", "application/json")
@@ -109,15 +110,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"error": str(e)}).encode())
 
     def log_message(self, *args):
-        pass  # 安静运行
+        pass  # run quietly
 
 
 if __name__ == "__main__":
-    print(f"✓ DeepL 代理运行于 http://localhost:{PORT}")
-    print(f"  转发目标: {ENDPOINT}")
-    print(f"  在 French Reader 设置里把「DeepL 代理地址」填 http://localhost:{PORT}")
-    print("  Ctrl+C 停止")
+    print(f"✓ DeepL proxy running at http://localhost:{PORT}")
+    print(f"  forwarding to: {ENDPOINT}")
+    print(f"  in Mot à Mot Settings, set \"DeepL proxy address\" to http://localhost:{PORT}")
+    print("  Ctrl+C to stop")
     try:
         http.server.HTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
     except KeyboardInterrupt:
-        print("\n已停止")
+        print("\nstopped")

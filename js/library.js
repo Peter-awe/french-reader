@@ -1,7 +1,7 @@
-/* library.js — 文本导入与解析
-   - txt：直接读取
-   - epub：本质是 zip，用 JSZip 解开，按 spine 顺序抽取正文
-   - 粘贴文本
+/* library.js — text import & parsing
+   - txt: read directly
+   - epub: it's essentially a zip; open with JSZip and pull the body text in spine order
+   - pasted text
 */
 const Library = (() => {
 
@@ -27,7 +27,7 @@ const Library = (() => {
     const zip = await JSZip.loadAsync(file);
     const parser = new DOMParser();
 
-    // 1. META-INF/container.xml → 找到 .opf 路径
+    // 1. META-INF/container.xml → locate the .opf path
     const containerFile = zip.file('META-INF/container.xml');
     if (!containerFile) throw new Error('Not a valid epub (missing container.xml)');
     const containerXml = await containerFile.async('string');
@@ -37,7 +37,7 @@ const Library = (() => {
     if (!opfPath) throw new Error('epub is missing the OPF path');
     const opfDir = opfPath.includes('/') ? opfPath.replace(/\/[^/]*$/, '/') : '';
 
-    // 2. 解析 .opf：manifest（id→href）+ spine（阅读顺序）+ 标题
+    // 2. parse the .opf: manifest (id→href) + spine (reading order) + title
     const opfXml = await zip.file(opfPath).async('string');
     const opf = parser.parseFromString(opfXml, 'application/xml');
 
@@ -46,7 +46,7 @@ const Library = (() => {
       manifest[item.getAttribute('id')] = item.getAttribute('href');
     });
 
-    // dc:title 带命名空间，用 NS 感知查询（querySelector('title') 匹配不到 dc:title）
+    // dc:title is namespaced; use a namespace-aware lookup (querySelector('title') won't match dc:title)
     const titleEls = opf.getElementsByTagNameNS('*', 'title');
     let title = (titleEls.length && titleEls[0].textContent.trim())
       || file.name.replace(/\.epub$/i, '');
@@ -54,7 +54,7 @@ const Library = (() => {
     const spine = [...opf.querySelectorAll('spine > itemref')]
       .map(ir => ir.getAttribute('idref'));
 
-    // 3. 按 spine 顺序读每个章节文件，去标签取正文
+    // 3. read each chapter file in spine order, strip tags, keep the text
     const chapters = [];
     for (const idref of spine) {
       let href = manifest[idref];
@@ -65,7 +65,7 @@ const Library = (() => {
       const html = await f.async('string');
       const doc = parser.parseFromString(html, 'text/html');
       doc.querySelectorAll('script, style').forEach(n => n.remove());
-      // 用块级换行保留段落感
+      // insert newlines at block elements to preserve paragraph breaks
       doc.querySelectorAll('p, br, div, h1, h2, h3, h4, li').forEach(n => {
         n.appendChild(document.createTextNode('\n'));
       });
@@ -89,7 +89,7 @@ const Library = (() => {
   async function importFile(file) {
     const name = file.name.toLowerCase();
     if (name.endsWith('.epub')) return importEpub(file);
-    return importTxt(file); // .txt 及其他纯文本
+    return importTxt(file); // .txt and other plain text
   }
 
   async function importText(title, text) {
@@ -104,7 +104,7 @@ const Library = (() => {
     return book;
   }
 
-  // 规整空白：逐行 trim + 压缩行内制表符/不间断空格，3+ 空行压成 2
+  // Normalize whitespace: trim each line, collapse inline tabs/non-breaking spaces, 3+ blank lines → 2
   function normalize(text) {
     return text
       .replace(/\r\n?/g, '\n')

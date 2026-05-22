@@ -1,4 +1,6 @@
-# French Reader
+# Mot à Mot
+
+*Read French in your browser, one word at a time.*
 
 A small web app for close-reading French texts. Click any word for an instant translation, select a phrase or sentence to translate it, highlight the words you've looked up, and pick up where you left off. Bring your own EPUB/TXT books. No daily translation limit, no account, no backend — everything stays in your browser.
 

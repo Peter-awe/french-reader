@@ -4,5 +4,5 @@
 *.txt
 !README*.txt
 
-# DeepL 密钥 —— 绝不提交（本地代理从这里读 key）
+# DeepL key — never commit (the local proxy reads the key from here)
 deepl_key.txt
