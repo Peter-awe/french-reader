@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>French Reader · 法语阅读器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">📖 French Reader</div>
+    <div class="topbar-actions">
+      <button id="btn-library" class="btn">书库</button>
+      <button id="btn-settings" class="btn">设置</button>
+    </div>
+  </header>
+
+  <!-- ===== 书库视图 ===== -->
+  <section id="library-view" class="view">
+    <h1 class="view-title">我的书库</h1>
+    <div class="import-area">
+      <div class="import-box" id="drop-zone">
+        <p class="import-hint">把 <b>.epub</b> / <b>.txt</b> 文件拖到这里，或</p>
+        <input type="file" id="file-input" accept=".epub,.txt" hidden>
+        <button class="btn btn-primary" id="btn-choose-file">选择文件</button>
+        <p class="import-status" id="import-status"></p>
+      </div>
+      <details class="paste-area">
+        <summary>或者直接粘贴文本</summary>
+        <input type="text" id="paste-title" placeholder="标题（可选）">
+        <textarea id="paste-text" placeholder="把法语文本粘贴到这里…"></textarea>
+        <button class="btn btn-primary" id="btn-import-paste">导入文本</button>
+      </details>
+    </div>
+    <ul id="book-list" class="book-list"></ul>
+  </section>
+
+  <!-- ===== 阅读视图 ===== -->
+  <section id="reader-view" class="view hidden">
+    <div class="reader-head">
+      <button class="btn" id="btn-back">← 书库</button>
+      <span id="reader-title" class="reader-title"></span>
+      <span id="reader-progress" class="progress-label"></span>
+    </div>
+    <div class="reader-progressbar"><div id="progress-fill" class="progress-fill"></div></div>
+    <article id="reader-content" class="reader-content"></article>
+  </section>
+
+  <!-- ===== 设置弹窗 ===== -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>设置</h2>
+
+      <label class="field-label">翻译方向</label>
+      <div class="row">
+        <select id="src-lang">
+          <option value="fr">法语 fr</option>
+          <option value="en">英语 en</option>
+          <option value="es">西班牙语 es</option>
+          <option value="de">德语 de</option>
+          <option value="it">意大利语 it</option>
+          <option value="auto">自动检测 auto</option>
+        </select>
+        <span class="arrow">→</span>
+        <select id="tgt-lang">
+          <option value="en">英语 en</option>
+          <option value="zh">中文 zh</option>
+          <option value="fr">法语 fr</option>
+        </select>
+      </div>
+
+      <label class="field-label">DeepL Free API Key（可选）</label>
+      <input type="password" id="deepl-key" placeholder="xxxxxxxx-xxxx-...:fx">
+      <p class="hint">留空则用免费端点（Google 镜像 / Lingva / MyMemory 自动 fallback）。<br>
+        ⚠️ DeepL 浏览器直连受 CORS 限制，可能需要本地代理（见 README）。Key 只存在你本地浏览器，不会上传。</p>
+
+      <label class="field-label checkbox-label">
+        <input type="checkbox" id="auto-highlight" checked> 点过的词自动高亮
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="btn-clear-words">清空生词高亮</button>
+        <div class="spacer"></div>
+        <button class="btn" id="btn-close-settings">取消</button>
+        <button class="btn btn-primary" id="btn-save-settings">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 翻译弹窗 ===== -->
+  <div id="popup" class="popup hidden">
+    <div class="popup-head">
+      <span class="popup-word" id="popup-word"></span>
+      <button class="popup-close" id="popup-close">×</button>
+    </div>
+    <div class="popup-trans" id="popup-trans">…</div>
+    <div class="popup-actions">
+      <button class="btn-mini" id="popup-sentence">翻译整句</button>
+      <button class="btn-mini" id="popup-known">标记已掌握</button>
+      <button class="btn-mini" id="popup-forget">移除高亮</button>
+    </div>
+    <div class="popup-sentence-trans hidden" id="popup-sentence-trans"></div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- JSZip 用于解析 epub（epub 本质是 zip） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/translate.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/reader.js"></script>
+</body>
+</html>
